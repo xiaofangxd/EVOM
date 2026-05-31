@@ -1,8 +1,28 @@
 # EVOM
 
-EVOM is an LLM-guided meta-evolution framework for discovering actor-critic architectures for continuous-control reinforcement learning. It treats architecture search as a bi-level process: an outer evolutionary loop uses an LLM design agent to initialize, mutate, and crossover executable actor-critic programs, while an inner PPO loop evaluates each candidate with low-budget training and retrains selected elites with the full budget.
+<p align="center">
+  <b>Agentic Meta-Evolution of Actor-Critic Architectures for Reinforcement Learning</b>
+</p>
 
-The current code supports Ant-v4 and HalfCheetah-v4, with manually designed PPO, random search, MLES-style direct program search, reproduction-operator ablations, population-size sensitivity, and LLM-backbone comparisons.
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.11-blue">
+  <img alt="RL" src="https://img.shields.io/badge/RL-PPO-green">
+  <img alt="Tasks" src="https://img.shields.io/badge/Tasks-Ant%20%7C%20HalfCheetah-orange">
+  <img alt="License" src="https://img.shields.io/badge/License-TBD-lightgrey">
+</p>
+
+EVOM is an LLM-guided meta-evolution framework for discovering executable actor-critic architectures for continuous-control reinforcement learning. The method uses an outer evolutionary loop to search over architecture programs and an inner PPO loop to evaluate each candidate with low-budget training before full-budget retraining of selected elites.
+
+## Overview
+
+| Component | Description |
+| --- | --- |
+| Search object | Executable `PolicyNet` and `ValueNet` actor-critic architecture programs |
+| Design agent | LLM-guided initialization, mutation, and crossover |
+| Inner evaluator | PPO training with low-budget fitness estimation |
+| Final evaluation | Full-budget PPO retraining of selected elite architectures |
+| Tasks | `Ant-v4` and `HalfCheetah-v4` |
+| Comparisons | Manual PPO, random search, MLES-style direct program search, ablations, and LLM-backbone variants |
 
 ## Installation
 
@@ -16,7 +36,7 @@ For GPU training, install a PyTorch build that matches your CUDA driver if the d
 
 ## API Keys
 
-EVOM reads API keys from environment variables. No key is stored in the source code.
+EVOM reads keys from environment variables. No API key is stored in the source code.
 
 ```bash
 export DEEPSEEK_API_KEY="your_deepseek_key"
@@ -24,16 +44,34 @@ export AIBERM_API_KEY="your_aiberm_key"
 export REFLECT_API_KEY="your_reflect_key"
 ```
 
-Default EVOM and random-search runs use DeepSeek. The AIBERM key is used by `gpt54mini`, `gemini35flash`, and `claudeopus47`; the REFLECT key is used by `qwen36flash` and `qwen36plus`.
+| Profile | Provider key |
+| --- | --- |
+| `deepseek` | `DEEPSEEK_API_KEY` |
+| `gpt54mini`, `gemini35flash`, `claudeopus47` | `AIBERM_API_KEY` |
+| `qwen36flash`, `qwen36plus` | `REFLECT_API_KEY` |
 
-## Main EVOM Runs
+## Quick Start
+
+Run the main EVOM experiments:
 
 ```bash
 python evom.py --task ant --population-size 16 --generations 20 --cpu-parallel 48 --eval-rounds 3 --final-runs 3 --gpu-ids 1 2 3
 python evom.py --task halfcheetah --population-size 16 --generations 20 --cpu-parallel 48 --eval-rounds 3 --final-runs 3 --gpu-ids 1 2 3
 ```
 
-## Ablations
+Useful options:
+
+| Option | Meaning |
+| --- | --- |
+| `--task` | `ant` or `halfcheetah` |
+| `--population-size` | Number of architectures retained per generation |
+| `--generations` | Number of outer-loop generations |
+| `--offspring-mode` | `mixed`, `mutation_only`, or `crossover_only` |
+| `--llm-profile` | LLM backend profile |
+| `--gpu-ids` | GPUs assigned to PPO workers |
+| `--no-final-selection` | Skip full-budget elite retraining |
+
+## Ablation Examples
 
 ```bash
 python evom.py --task ant --population-size 16 --generations 20 --offspring-mode mutation_only --cpu-parallel 48 --eval-rounds 3 --final-runs 3 --gpu-ids 1 2 3
@@ -43,18 +81,23 @@ python evom.py --task ant --population-size 32 --generations 20 --cpu-parallel 4
 python evom.py --task ant --population-size 16 --generations 20 --llm-profile claudeopus47 --cpu-parallel 48 --eval-rounds 3 --final-runs 3 --gpu-ids 1 2 3
 ```
 
-Available LLM profiles are `deepseek`, `gpt54mini`, `gemini35flash`, `claudeopus47`, `qwen36flash`, and `qwen36plus`.
-
 ## Baselines
+
+Manual PPO:
 
 ```bash
 python baseline_parallel.py --task ant --seeds 42 123 456 --save-dir ./results/ant_baseline --timesteps 5000000 --eval-freq 25000 --n-eval-episodes 5 --gpu-parallel 3 --gpu-ids 1 2 3
 python baseline_parallel.py --task halfcheetah --seeds 42 123 456 --save-dir ./results/halfcheetah_baseline --timesteps 5000000 --eval-freq 25000 --n-eval-episodes 5 --gpu-parallel 3 --gpu-ids 1 2 3
+```
+
+Random search:
+
+```bash
 python random_search.py --task ant --population-size 16 --generations 20 --cpu-parallel 48 --eval-rounds 3 --final-runs 3 --gpu-ids 1 2 3
 python random_search.py --task halfcheetah --population-size 16 --generations 20 --cpu-parallel 48 --eval-rounds 3 --final-runs 3 --gpu-ids 1 2 3
 ```
 
-The MLES comparison requires the LLM4AD/MLES source version that contains `llm4ad.method.mles`. Add that source directory to `PYTHONPATH` before running:
+MLES-style direct program search requires the LLM4AD/MLES source version that contains `llm4ad.method.mles`. Add that source directory to `PYTHONPATH` before running:
 
 ```bash
 export PYTHONPATH=/path/to/MLES:$PYTHONPATH
@@ -64,12 +107,14 @@ python mles_halfcheetah.py --total-env-steps 5000000 --pop-size 16 --num-sampler
 
 ## Outputs
 
-EVOM writes each run to a timestamped directory under `runs/`. Important files include:
+EVOM creates timestamped run directories under `runs/`.
 
-- `population_history.json`: outer-loop candidate records and fitness values
-- `final_selection/elite_evaluation_summary.json`: full-budget elite evaluation
-- `reward_curves.json`: PPO evaluation curves when available
-- generated candidate programs and training logs under each run directory
+| File | Content |
+| --- | --- |
+| `population_history.json` | Outer-loop architecture records and fitness values |
+| `final_selection/elite_evaluation_summary.json` | Full-budget elite evaluation summary |
+| `reward_curves.json` | PPO evaluation curves when available |
+| candidate folders | Generated programs, logs, checkpoints, and evaluation artifacts |
 
 ## Repository Layout
 
