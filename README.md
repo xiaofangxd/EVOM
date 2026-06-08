@@ -132,10 +132,6 @@ task_description_ant.py
 task_description_halfcheetah.py
 mles_ant.py
 mles_halfcheetah.py
-plot_ant_main_visualization.py
-plot_halfcheetah_main_visualization.py
-plot_prompt_template.py
-summarize_current_results.py
 ```
 
 ## Citation
