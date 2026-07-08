@@ -136,4 +136,16 @@ mles_halfcheetah.py
 
 ## Citation
 
-If you use this repository, please cite the EVOM paper associated with this code release.
+If you find this work useful, please cite:
+
+```bibtex
+@misc{zhang2026evomagenticmetaevolutionactorcritic,
+      title={EVOM: Agentic Meta-Evolution of Actor-Critic Architectures for Reinforcement Learning}, 
+      author={Boyun Zhang and Chao Wang and Kai Wu},
+      year={2026},
+      eprint={2606.26327},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2606.26327}, 
+}
+```
